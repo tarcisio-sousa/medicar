@@ -3,3 +3,9 @@
 
 schedule: ''
 update: false
+
+branch: main
+
+requirements:
+  - Pipfile
+  - Pipfile.lock
