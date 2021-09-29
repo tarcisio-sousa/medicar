@@ -27,6 +27,7 @@ class Medico(models.Model):
     crm = models.CharField(_('CRM'), max_length=50, blank=False, null=False)
     email = models.EmailField(max_length=250, blank=True, null=True)
     telefone = models.CharField(max_length=20, blank=True, null=True)
+    especialidade = models.ForeignKey('Especialidade', on_delete=models.CASCADE, blank=False, null=False)
 
     class Meta:
         verbose_name = 'Médico'
@@ -36,9 +37,11 @@ class Medico(models.Model):
         return f'CRM {self.crm} - {self.nome}'
 
 
+'''
 class MedicoEspecialidade(models.Model):
     medico = models.ForeignKey('Medico', on_delete=models.CASCADE, blank=False, null=False)
     especialidade = models.ForeignKey('Especialidade', on_delete=models.CASCADE, blank=False, null=False)
+'''
 
 
 class Agenda(models.Model):

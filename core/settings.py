@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'collectfast',
     'django.contrib.staticfiles',
+    'rest_framework',
     'core.base',
 ]
 
@@ -76,6 +77,11 @@ TEMPLATES = [
         },
     },
 ]
+
+REST_FRAMEWORK = {
+    'DATE_INPUT_FORMATS': ['%d/%m/%Y', ],
+    'DATE_FORMAT': '%Y-%m-%d',
+}
 
 WSGI_APPLICATION = 'core.wsgi.application'
 
