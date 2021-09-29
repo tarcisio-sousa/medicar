@@ -59,11 +59,12 @@ class Agenda(models.Model):
 
 
 class AgendaHorario(models.Model):
-    agenda = models.ForeignKey('Agenda', on_delete=models.CASCADE, blank=False, null=False)
-    horario = models.TimeField(_('Horário'), blank=False, null=False, unique=True)
+    pass
+    # agenda = models.ForeignKey('Agenda', on_delete=models.CASCADE, blank=False, null=False)
+    # horario = models.TimeField(_('Horário'), blank=False, null=False, unique=True)
 
-    def __str__(self):
-        return f'{self.horario}'
+    # def __str__(self):
+    #     return f'{self.horario}'
 
 
 class Consulta(models.Model):
