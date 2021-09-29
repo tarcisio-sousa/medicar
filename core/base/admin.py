@@ -1,5 +1,5 @@
 from django.contrib import admin
-from core.base.models import Especialidade, Medico, MedicoEspecialidade, Agenda
+from core.base.models import Especialidade, Medico, MedicoEspecialidade, Agenda, AgendaHorario
 
 
 @admin.register(Especialidade)
@@ -18,12 +18,12 @@ class MedicoAdmin(admin.ModelAdmin):
     inlines = (MedicoEspecialidadeInline, )
 
 
-# class AgendaHorarioInline(admin.TabularInline):
-#     model = AgendaHorario
-#     extra = 1
+class AgendaHorarioInline(admin.TabularInline):
+    model = AgendaHorario
+    extra = 1
 
 
 @admin.register(Agenda)
 class AgendaAdmin(admin.ModelAdmin):
     list_display = ['medico', 'data_alocacao', ]
-    # inlines = (AgendaHorarioInline, )
+    inlines = (AgendaHorarioInline, )
