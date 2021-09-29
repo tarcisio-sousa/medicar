@@ -25,7 +25,7 @@ class ClinicaEspecialidade(models.Model):
 class Medico(models.Model):
     nome = models.CharField(max_length=250, blank=False, null=False)
     crm = models.CharField(_('CRM'), max_length=50, blank=False, null=False)
-    email = models.CharField(max_length=250, blank=True, null=True)
+    email = models.EmailField(max_length=250, blank=True, null=True)
     telefone = models.CharField(max_length=20, blank=True, null=True)
 
     class Meta:
