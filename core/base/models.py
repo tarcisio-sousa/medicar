@@ -15,13 +15,6 @@ class Especialidade(models.Model):
         return f'{self.nome}'
 
 
-'''
-class ClinicaEspecialidade(models.Model):
-    clinica = models.ForeignKey('Clinica', on_delete=models.CASCADE, blank=False, null=False)
-    especialidade = models.ForeignKey('Especialidade', on_delete=models.CASCADE, blank=False, null=False)
-'''
-
-
 class Medico(models.Model):
     nome = models.CharField(max_length=250, blank=False, null=False)
     crm = models.CharField(_('CRM'), max_length=50, blank=False, null=False)
@@ -37,40 +30,38 @@ class Medico(models.Model):
         return f'CRM {self.crm} - {self.nome}'
 
 
-'''
-class MedicoEspecialidade(models.Model):
-    medico = models.ForeignKey('Medico', on_delete=models.CASCADE, blank=False, null=False)
-    especialidade = models.ForeignKey('Especialidade', on_delete=models.CASCADE, blank=False, null=False)
-'''
-
-
 class Agenda(models.Model):
     medico = models.ForeignKey('Medico', on_delete=models.CASCADE, blank=False, null=False)
-    data_alocacao = models.DateField('Dia', blank=False, null=False)
+    dia = models.DateField('Dia', blank=False, null=False)
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=['medico', 'data_alocacao'], name='medico_horario_unique')
+            models.UniqueConstraint(fields=['medico', 'dia'], name='medico_horario_unique')
         ]
 
     def __str__(self):
-        return f'{self.data_alocacao} {self.medico}'
+        return f'{self.dia} {self.medico}'
 
     def clean(self):
-        if self.data_alocacao < datetime.date.today():
-            raise ValidationError(_('Dia %(data)s não está disponível'), params={'data': self.data_alocacao},)
+        if self.dia < datetime.date.today():
+            raise ValidationError(_('Dia %(data)s não está disponível'), params={'data': self.dia},)
 
 
 class AgendaHorario(models.Model):
-    agenda = models.ForeignKey('Agenda', on_delete=models.CASCADE, blank=False, null=False)
-    horario = models.TimeField(_('Horário'), blank=False, null=False, unique=True)
+    agenda = models.ForeignKey('Agenda', related_name='horarios', on_delete=models.CASCADE, blank=False, null=False)
+    horario = models.TimeField(_('Horário'), blank=False, null=False)
 
     def __str__(self):
-        return f'{self.horario}'
+        return f'{self.horario.strftime("%H:%M")}'
 
 
 class Consulta(models.Model):
-    pass
+    agenda = models.ForeignKey('Agenda', related_name='consultas', on_delete=models.CASCADE, blank=False, null=False)
+    horario = models.TimeField(_('Horário'), blank=False, null=False, unique=True)
+    data_agendamento = models.DateTimeField(_('Data agendamento'), auto_now=True, blank=False, null=False)
+
+    def __str__(self):
+        return f'{self.agenda} - {self.horario.strftime("%H:%M")}'
 
 
 class Cliente(models.Model):
