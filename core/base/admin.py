@@ -1,5 +1,5 @@
 from django.contrib import admin
-from core.base.models import Especialidade, Medico, Agenda, AgendaHorario
+from core.base.models import Especialidade, Medico, Agenda, AgendaHorario, Consulta
 
 
 @admin.register(Especialidade)
@@ -7,17 +7,9 @@ class EspecialidadeAdmin(admin.ModelAdmin):
     list_display = ['nome', ]
 
 
-'''
-class MedicoEspecialidadeInline(admin.TabularInline):
-    model = MedicoEspecialidade
-    extra = 1
-'''
-
-
 @admin.register(Medico)
 class MedicoAdmin(admin.ModelAdmin):
     list_display = ['crm', 'nome', ]
-    # inlines = (MedicoEspecialidadeInline, )
 
 
 class AgendaHorarioInline(admin.TabularInline):
@@ -27,5 +19,10 @@ class AgendaHorarioInline(admin.TabularInline):
 
 @admin.register(Agenda)
 class AgendaAdmin(admin.ModelAdmin):
-    list_display = ['medico', 'data_alocacao', ]
+    list_display = ['medico', 'dia', ]
     inlines = (AgendaHorarioInline, )
+
+
+@admin.register(Consulta)
+class ConsultaAdmin(admin.ModelAdmin):
+    list_display = ['agenda', 'data_agendamento', 'horario', ]
