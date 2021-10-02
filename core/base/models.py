@@ -57,8 +57,13 @@ class AgendaHorario(models.Model):
 
 class Consulta(models.Model):
     agenda = models.ForeignKey('Agenda', related_name='consultas', on_delete=models.CASCADE, blank=False, null=False)
-    horario = models.TimeField(_('Horário'), blank=False, null=False, unique=True)
+    horario = models.TimeField(_('Horário'), blank=False, null=False)
     data_agendamento = models.DateTimeField(_('Data agendamento'), auto_now=True, blank=False, null=False)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['agenda_id', 'horario'], name='agenda_horario_unique')
+        ]
 
     def __str__(self):
         return f'{self.agenda} - {self.horario.strftime("%H:%M")}'
