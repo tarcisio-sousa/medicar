@@ -55,6 +55,7 @@ class AgendaHorario(models.Model):
         return f'{self.horario.strftime("%H:%M")}'
 
 
+# Verificar se horário está disponível na agenda selecionada
 class Consulta(models.Model):
     agenda = models.ForeignKey('Agenda', related_name='consultas', on_delete=models.CASCADE, blank=False, null=False)
     horario = models.TimeField(_('Horário'), blank=False, null=False)
