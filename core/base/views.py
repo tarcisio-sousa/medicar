@@ -103,11 +103,12 @@ def agendas(request):
 # A listagem não deve exibir consultas para dia e horário passados - ok
 # Os itens da listagem devem vir ordenados por ordem crescente do dia e horário da consulta - ok
 @api_view(['GET', 'POST', 'PUT', 'DELETE'])
-def consultas(request, pk=False):
-    if not pk:
+def consultas(request, consulta_id=False):
+    data_hoje = datetime.date.today()
+    hora_agora = datetime.datetime.now().time()
+    data_hora_hoje = datetime.datetime.now()
+    if not consulta_id:
         if request.method == 'GET':
-            data_hoje = datetime.date.today()
-            hora_agora = datetime.datetime.now().strftime("%H:%M")
             consultas = Consulta.objects.filter(agenda__dia__gte=data_hoje, horario__gte=hora_agora)
             consultas = consultas.order_by('-agenda__dia', 'horario')
             serializer = ConsultaSerializer(consultas, many=True)
@@ -123,7 +124,7 @@ def consultas(request, pk=False):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     else:
         try:
-            consulta = Consulta.objects.get(pk=pk)
+            consulta = Consulta.objects.get(pk=consulta_id)
         except Consulta.DoesNotExist:
             return HttpResponse(status=status.HTTP_404_NOT_FOUND)
 
@@ -140,8 +141,13 @@ def consultas(request, pk=False):
 
         elif request.method == 'DELETE':
             # não deve ser possível desmarcar uma consulta que não foi marcada pelo usuário logado
-            # não deve ser possível desmarcar uma consulta que nunca foi marcada (identificador inexistente)
-            # não deve ser possível desmarcar uma consulta que já aconteceu
-            consulta.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
+            # não deve ser possível desmarcar uma consulta que nunca foi marcada (identificador inexistente) - ok
+            # não deve ser possível desmarcar uma consulta que já aconteceu - ok
+            data_consulta = datetime.datetime.combine(consulta.agenda.dia, consulta.horario)
+
+            if data_hora_hoje < data_consulta:
+                consulta.delete()
+                return Response(status=status.HTTP_204_NO_CONTENT)
+            serializer = ConsultaSerializer(consulta)
+            return Response(serializer.data)
 # '''
