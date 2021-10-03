@@ -70,7 +70,10 @@ def _verificaAgendasDisponiveis(agendas):
 
 
 # '''
-# As agendas devem vir ordenadas por ordem crescente de data
+# Não deve ser possível criar mais de uma agenda para um médico em um mesmo dia - ok
+# Não deve ser possível criar uma agenda para um médico em um dia passado - ok
+
+# As agendas devem vir ordenadas por ordem crescente de data - ok
 # Agendas para datas passadas ou que todos os seus horários já foram preenchidos devem ser excluídas da listagem
 # Horários dentro de uma agenda que já passaram ou que foram preenchidos devem ser excluídos da listagem
 @api_view(['GET', 'POST'])
@@ -97,16 +100,21 @@ def agendas(request):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+# '''
 
 
 # '''
+# A data em que o agendamento foi feito deve ser salva ao se marcar uma consulta - ok
+# Não deve ser possível marcar uma consulta para um dia e horário passados - ok
+# Não deve ser possível marcar uma consulta se o usuário já possui uma consulta marcada no mesmo dia e horário
+# Não deve ser possível marcar uma consulta se o dia e horário já foram preenchidos - ok
+
 # A listagem não deve exibir consultas para dia e horário passados - ok
 # Os itens da listagem devem vir ordenados por ordem crescente do dia e horário da consulta - ok
 @api_view(['GET', 'POST', 'PUT', 'DELETE'])
 def consultas(request, consulta_id=False):
     data_hoje = datetime.date.today()
     hora_agora = datetime.datetime.now().time()
-    data_hora_hoje = datetime.datetime.now()
     if not consulta_id:
         if request.method == 'GET':
             consultas = Consulta.objects.filter(agenda__dia__gte=data_hoje, horario__gte=hora_agora)
@@ -143,9 +151,7 @@ def consultas(request, consulta_id=False):
             # não deve ser possível desmarcar uma consulta que não foi marcada pelo usuário logado
             # não deve ser possível desmarcar uma consulta que nunca foi marcada (identificador inexistente) - ok
             # não deve ser possível desmarcar uma consulta que já aconteceu - ok
-            data_consulta = datetime.datetime.combine(consulta.agenda.dia, consulta.horario)
-
-            if data_hora_hoje < data_consulta:
+            if consulta.valid_data_hora():
                 consulta.delete()
                 return Response(status=status.HTTP_204_NO_CONTENT)
             serializer = ConsultaSerializer(consulta)
