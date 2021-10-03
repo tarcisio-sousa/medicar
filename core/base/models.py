@@ -40,10 +40,13 @@ class Agenda(models.Model):
         ]
 
     def __str__(self):
-        return f'{self.dia} {self.medico}'
+        return f'{self.dia.strftime("%d/%m/%Y")} {self.medico}'
+
+    def valid_data(self):
+        return datetime.date.today() < self.dia
 
     def clean(self):
-        if self.dia < datetime.date.today():
+        if self.valid_data():
             raise ValidationError(_('Dia %(data)s não está disponível'), params={'data': self.dia},)
 
 
@@ -54,8 +57,10 @@ class AgendaHorario(models.Model):
     def __str__(self):
         return f'{self.horario.strftime("%H:%M")}'
 
+    def get_data_hora(self):
+        return datetime.datetime.combine(self.agenda.dia, self.horario)
 
-# Verificar se horário está disponível na agenda selecionada
+
 class Consulta(models.Model):
     agenda = models.ForeignKey('Agenda', related_name='consultas', on_delete=models.CASCADE, blank=False, null=False)
     horario = models.TimeField(_('Horário'), blank=False, null=False)
@@ -68,6 +73,19 @@ class Consulta(models.Model):
 
     def __str__(self):
         return f'{self.agenda} - {self.horario.strftime("%H:%M")}'
+
+    def get_data_hora(self):
+        return datetime.datetime.combine(self.agenda.dia, self.horario)
+
+    def valid_data_hora(self):
+        return datetime.datetime.now() < self.get_data_hora()
+
+    def clean(self):
+        horario_agenda = AgendaHorario.objects.filter(agenda=self.agenda, horario=self.horario).values_list('horario')
+        if not horario_agenda:
+            raise ValidationError(_('Horário não está disponível'))
+        elif not self.valid_data_hora():
+            raise ValidationError(_('Não é possível realizar consulta para data e hora retroativa'))
 
 
 class Cliente(models.Model):

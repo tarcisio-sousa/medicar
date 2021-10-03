@@ -31,7 +31,7 @@ class ConsultaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Consulta
         fields = ['id', 'agenda', 'horario', 'data_agendamento', ]
-        depth = 3
+        depth = 2
 
 
 class CriarConsultaSerializer(serializers.ModelSerializer):
