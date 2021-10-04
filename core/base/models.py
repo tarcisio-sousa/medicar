@@ -42,6 +42,17 @@ class Agenda(models.Model):
     def __str__(self):
         return f'{self.dia.strftime("%d/%m/%Y")} {self.medico}'
 
+    def get_horarios_disponiveis(self):
+        horarios = (
+            AgendaHorario.objects
+            .filter(agenda=self.id)
+            .filter(agenda__dia__gte=datetime.date.today())
+            .filter(horario__gte=datetime.datetime.now().time())
+            .exclude(horario__in=Consulta.objects.filter(agenda=self.id).values_list('horario'))
+            .values_list('horario', flat=True))
+        horarios = [horario.strftime("%H:%M") for horario in horarios]
+        return horarios
+
     def valid_data(self):
         return datetime.date.today() < self.dia
 
