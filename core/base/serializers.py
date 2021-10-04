@@ -1,6 +1,5 @@
-import datetime
 from rest_framework import serializers
-from .models import Especialidade, Medico, Agenda, AgendaHorario, Consulta
+from .models import Especialidade, Medico, Agenda, Consulta
 
 
 class EspecialidadeSerializer(serializers.ModelSerializer):
@@ -27,14 +26,7 @@ class AgendaSerializer(serializers.ModelSerializer):
 
     def to_representation(self, agenda):
         ret = super().to_representation(agenda)
-        horarios = AgendaHorario.objects.filter(agenda=agenda.id)
-        horarios = horarios.filter(agenda__dia__gte=datetime.date.today(), horario__gte=datetime.datetime.now().time())
-        horarios = horarios.exclude(horario__in=Consulta.objects.filter(agenda=agenda.id).values_list('horario'))
-        horarios = horarios.values_list('horario', flat=True)
-        h = []
-        for horario in horarios:
-            h.append(horario.strftime("%H:%M"))
-        ret['horarios'] = h
+        ret['horarios'] = agenda.get_horarios_disponiveis()
         return ret
 
 

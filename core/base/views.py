@@ -1,7 +1,7 @@
 # from django.shortcuts import render
 import datetime
 from django.http import HttpResponse
-from .models import Especialidade, Medico, Agenda, AgendaHorario, Consulta
+from .models import Especialidade, Medico, Agenda, Consulta
 from .serializers import EspecialidadeSerializer, MedicoSerializer
 from .serializers import AgendaSerializer, ConsultaSerializer, CriarConsultaSerializer
 from rest_framework import status
@@ -56,19 +56,6 @@ def medicos(request):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-def _verificaAgendasDisponiveis(agendas):
-    agendasID = agendas.values_list('id')
-    consultas = Consulta.objects.filter(agenda__in=agendasID).values_list('horario')
-    horarios = AgendaHorario.objects.filter(agenda__in=agendasID).exclude(horario__in=consultas)
-    print(consultas)
-    print(horarios)
-    # agendas = AgendaHorario.objects.filter(dia__gte=datetime.date.today()).order_by('dia')
-    # print(agendas)
-    # for agenda in agendas:
-    #     print(agenda.horario)
-    # agendas
-
-
 # '''
 # Não deve ser possível criar mais de uma agenda para um médico em um mesmo dia - ok
 # Não deve ser possível criar uma agenda para um médico em um dia passado - ok
@@ -80,6 +67,7 @@ def _verificaAgendasDisponiveis(agendas):
 def agendas(request):
     if request.method == 'GET':
         agendas = Agenda.objects.filter(dia__gte=datetime.date.today()).order_by('dia')
+        agendas = [agenda for agenda in agendas if agenda.get_horarios_disponiveis()]
         if request.GET:
             if 'medico' in request.GET:
                 medicos = request.GET.getlist('medico')
