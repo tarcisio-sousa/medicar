@@ -5,7 +5,8 @@ from .models import Especialidade, Medico, Agenda, Consulta
 from .serializers import EspecialidadeSerializer, MedicoSerializer
 from .serializers import AgendaSerializer, ConsultaSerializer, CriarConsultaSerializer
 from rest_framework import status
-from rest_framework.decorators import api_view
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
 
@@ -14,9 +15,10 @@ def home(request):
 
 
 @api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
 def especialidades(request):
     if request.method == 'GET':
-        if request.GET and request.GET['search']:
+        if 'search' in request.GET:
             search = request.GET['search']
             especialidades = Especialidade.objects.filter(nome__contains=search)
         else:
@@ -33,6 +35,7 @@ def especialidades(request):
 
 
 @api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
 def medicos(request):
     if request.method == 'GET':
         if request.GET:
@@ -61,9 +64,10 @@ def medicos(request):
 # Não deve ser possível criar uma agenda para um médico em um dia passado - ok
 
 # As agendas devem vir ordenadas por ordem crescente de data - ok
-# Agendas para datas passadas ou que todos os seus horários já foram preenchidos devem ser excluídas da listagem
-# Horários dentro de uma agenda que já passaram ou que foram preenchidos devem ser excluídos da listagem
+# Agendas para datas passadas ou que todos os seus horários já foram preenchidos devem ser excluídas da listagem - ok
+# Horários dentro de uma agenda que já passaram ou que foram preenchidos devem ser excluídos da listagem - ok
 @api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
 def agendas(request):
     if request.method == 'GET':
         agendas = Agenda.objects.filter(dia__gte=datetime.date.today()).order_by('dia')
@@ -100,6 +104,7 @@ def agendas(request):
 # A listagem não deve exibir consultas para dia e horário passados - ok
 # Os itens da listagem devem vir ordenados por ordem crescente do dia e horário da consulta - ok
 @api_view(['GET', 'POST', 'PUT', 'DELETE'])
+@permission_classes([IsAuthenticated])
 def consultas(request, consulta_id=False):
     data_hoje = datetime.date.today()
     hora_agora = datetime.datetime.now().time()
