@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'collectfast',
     'django.contrib.staticfiles',
     'rest_framework',
+    'rest_framework.authtoken',
     'core.base',
 ]
 
@@ -81,6 +82,12 @@ TEMPLATES = [
 REST_FRAMEWORK = {
     'DATE_INPUT_FORMATS': ['%d/%m/%Y', ],
     'DATE_FORMAT': '%Y-%m-%d',
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
 }
 
 WSGI_APPLICATION = 'core.wsgi.application'
