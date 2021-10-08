@@ -72,7 +72,7 @@ class ConsultaSerializer(serializers.ModelSerializer):
         return ret
 
 
-class CriarConsultaSerializer(serializers.ModelSerializer):
+class RegistrarConsultaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Consulta
-        fields = ['agenda', 'horario', ]
+        fields = ['agenda', 'horario', 'cliente']
