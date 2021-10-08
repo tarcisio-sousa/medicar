@@ -2,7 +2,7 @@ import datetime
 from django.http import HttpResponse
 from .models import Especialidade, Medico, Agenda, Consulta
 from .serializers import EspecialidadeSerializer, MedicoSerializer
-from .serializers import AgendaSerializer, ConsultaSerializer, CriarConsultaSerializer
+from .serializers import AgendaSerializer, ConsultaSerializer, RegistrarConsultaSerializer
 from .serializers import RegistroSerializer
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -133,7 +133,8 @@ def consultas(request, consulta_id=False):
             return Response(serializer.data)
 
         elif request.method == 'POST':
-            serializer = CriarConsultaSerializer(data=request.data)
+            request.data['cliente'] = request.user.id
+            serializer = RegistrarConsultaSerializer(data=request.data)
             if serializer.is_valid():
                 consulta = serializer.save()
                 consulta = Consulta.objects.get(id=consulta.id)
@@ -161,7 +162,7 @@ def consultas(request, consulta_id=False):
             # não deve ser possível desmarcar uma consulta que não foi marcada pelo usuário logado
             # não deve ser possível desmarcar uma consulta que nunca foi marcada (identificador inexistente) - ok
             # não deve ser possível desmarcar uma consulta que já aconteceu - ok
-            if consulta.valid_data_hora():
+            if consulta.cliente == request.user and consulta.valid_data_hora():
                 consulta.delete()
                 return Response(status=status.HTTP_204_NO_CONTENT)
             serializer = ConsultaSerializer(consulta)
