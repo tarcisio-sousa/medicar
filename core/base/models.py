@@ -1,4 +1,5 @@
 import datetime
+
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.translation import gettext_lazy as _
@@ -81,6 +82,7 @@ class Consulta(models.Model):
     agenda = models.ForeignKey('Agenda', related_name='consultas', on_delete=models.CASCADE, blank=False, null=False)
     horario = models.TimeField(_('Horário'), blank=False, null=False)
     data_agendamento = models.DateTimeField(_('Data agendamento'), auto_now=True, blank=False, null=False)
+    cliente = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, blank=False, null=False)
 
     class Meta:
         constraints = [
@@ -102,10 +104,6 @@ class Consulta(models.Model):
             raise ValidationError(_('Horário não está disponível'))
         elif not self.valid_data_hora():
             raise ValidationError(_('Não é possível realizar consulta para data e hora retroativa'))
-
-
-class Cliente(models.Model):
-    pass
 
 
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)

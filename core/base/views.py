@@ -1,17 +1,34 @@
-# from django.shortcuts import render
 import datetime
 from django.http import HttpResponse
 from .models import Especialidade, Medico, Agenda, Consulta
 from .serializers import EspecialidadeSerializer, MedicoSerializer
 from .serializers import AgendaSerializer, ConsultaSerializer, CriarConsultaSerializer
+from .serializers import RegistroSerializer
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
 
 def home(request):
     return HttpResponse('Medicar')
+
+
+@api_view(['GET', 'POST'])
+@permission_classes([AllowAny])
+def registrar(request):
+    data = {}
+
+    if request.method == 'POST':
+        serializer = RegistroSerializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.save()
+            data['response'] = 'Novo usuário registrado com sucesso.'
+            data['username'] = user.username
+        else:
+            data = serializer.errors
+        return Response(serializer.data)
+    return Response(data)
 
 
 @api_view(['GET', 'POST'])
