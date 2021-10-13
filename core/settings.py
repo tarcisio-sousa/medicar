@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'collectfast',
     'django.contrib.staticfiles',
+    'django_filters',
     'rest_framework',
     'rest_framework.authtoken',
     'core.base',
@@ -82,6 +83,7 @@ TEMPLATES = [
 REST_FRAMEWORK = {
     'DATE_INPUT_FORMATS': ['%d/%m/%Y', ],
     'DATE_FORMAT': '%Y-%m-%d',
+    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
     ],
