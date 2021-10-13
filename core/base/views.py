@@ -34,6 +34,7 @@ class EspecialidadeList(generics.ListAPIView):
     search_fields = ['nome']
 
 
+# Pendente solução
 class MedicoList(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     queryset = Medico.objects.all()
@@ -51,8 +52,15 @@ class MedicoList(generics.ListAPIView):
 # As agendas devem vir ordenadas por ordem crescente de data - ok
 # Agendas para datas passadas ou que todos os seus horários já foram preenchidos devem ser excluídas da listagem - ok
 # Horários dentro de uma agenda que já passaram ou que foram preenchidos devem ser excluídos da listagem - ok
+# Pendente solução
+# class AgendaList(generics.ListAPIView):
 class AgendaList(APIView):
     permission_classes = [IsAuthenticated]
+    # serializer_class = AgendaSerializer
+
+    # def get_queryset(self):
+    #     queryset = Agenda.objects.filter(dia__gte=datetime.date.today()).order_by('dia')
+    #     return queryset
 
     def get(self, request, format=None):
         agendas = Agenda.objects.filter(dia__gte=datetime.date.today()).order_by('dia')
