@@ -98,9 +98,11 @@ class Consulta(models.Model):
     def valid_data_hora(self):
         return datetime.datetime.now() < self.get_data_hora()
 
+    def valid_horario_in_agenda(self):
+        return AgendaHorario.objects.filter(agenda=self.agenda, horario=self.horario).values_list('horario')
+
     def clean(self):
-        horario_agenda = AgendaHorario.objects.filter(agenda=self.agenda, horario=self.horario).values_list('horario')
-        if not horario_agenda:
+        if not self.valid_horario_in_agenda():
             raise ValidationError(_('Horário não está disponível'))
         elif not self.valid_data_hora():
             raise ValidationError(_('Não é possível realizar consulta para data e hora retroativa'))

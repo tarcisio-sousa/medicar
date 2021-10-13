@@ -1,6 +1,9 @@
+import datetime
+
 from django.contrib.auth.models import User
 from rest_framework import serializers
-from .models import Especialidade, Medico, Agenda, Consulta
+from .models import Especialidade, Medico, Agenda, Consulta, AgendaHorario
+from django.utils.translation import gettext_lazy as _
 
 
 class RegistroSerializer(serializers.ModelSerializer):
@@ -76,3 +79,22 @@ class RegistrarConsultaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Consulta
         fields = ['agenda', 'horario', 'cliente']
+
+    def get_data_hora(self, consulta):
+        return datetime.datetime.combine(consulta['agenda'].dia, consulta['horario'])
+
+    def valid_data_hora(self, consulta):
+        return datetime.datetime.now() < self.get_data_hora(consulta)
+
+    def valid_horario_in_agenda(self, consulta):
+        return (
+            AgendaHorario.objects
+            .filter(agenda=consulta['agenda'], horario=consulta['horario'])
+            .values_list('horario'))
+
+    def validate(self, consulta):
+        if not self.valid_horario_in_agenda(consulta):
+            raise serializers.ValidationError(_('Horário não está disponível'))
+        elif not self.valid_data_hora(consulta):
+            raise serializers.ValidationError(_('Não é possível realizar consulta para data e hora retroativa'))
+        return consulta
