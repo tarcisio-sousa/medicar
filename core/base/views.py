@@ -1,4 +1,5 @@
 import datetime
+from django.db.models import Q
 from django.http import Http404
 from django_filters import FilterSet, DateFilter, ModelMultipleChoiceFilter
 from django_filters.rest_framework import DjangoFilterBackend
@@ -63,7 +64,6 @@ class MedicoList(generics.ListAPIView):
 # As agendas devem vir ordenadas por ordem crescente de data - ok
 # Agendas para datas passadas ou que todos os seus horários já foram preenchidos devem ser excluídas da listagem - ok
 # Horários dentro de uma agenda que já passaram ou que foram preenchidos devem ser excluídos da listagem - ok
-# Pendente solução
 
 class AgendaFilter(FilterSet):
     data_inicio = DateFilter(field_name="dia", lookup_expr='gte')
@@ -97,8 +97,10 @@ class AgendaList(generics.ListAPIView):
         return (
             AgendaHorario.objects
             .filter(agenda=agenda_id)
-            .filter(agenda__dia__gte=datetime.date.today())
-            .filter(horario__gte=datetime.datetime.now().time())
+            .filter(
+                Q(agenda__dia__gte=datetime.date.today()) |
+                Q(agenda__dia=datetime.date.today(), horario__gte=datetime.datetime.now().time())
+            )
             .exclude(horario__in=self.get_horarios_consulta_agendada(agenda_id))
             .values_list('horario', flat=True))
 
