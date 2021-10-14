@@ -13,19 +13,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 
-class RegistrarList(APIView):
+class RegistrarList(generics.CreateAPIView):
     permission_classes = [AllowAny]
-
-    def post(self, request, format=None):
-        data = {}
-        serializer = RegistroSerializer(data=request.data)
-        if serializer.is_valid():
-            user = serializer.save()
-            data['response'] = 'Novo usuário registrado com sucesso.'
-            data['username'] = user.username
-        else:
-            data = serializer.errors
-        return Response(serializer.data)
+    serializer_class = RegistroSerializer
 
 
 class EspecialidadeList(generics.ListAPIView):
@@ -64,7 +54,6 @@ class MedicoList(generics.ListAPIView):
 # As agendas devem vir ordenadas por ordem crescente de data - ok
 # Agendas para datas passadas ou que todos os seus horários já foram preenchidos devem ser excluídas da listagem - ok
 # Horários dentro de uma agenda que já passaram ou que foram preenchidos devem ser excluídos da listagem - ok
-
 class AgendaFilter(FilterSet):
     data_inicio = DateFilter(field_name="dia", lookup_expr='gte')
     data_final = DateFilter(field_name="dia", lookup_expr='lte')
@@ -111,7 +100,6 @@ class AgendaList(generics.ListAPIView):
         agendas_id = [agenda for agenda in agendas if self.get_horarios_agenda(agenda)]
         queryset = queryset.filter(id__in=agendas_id).order_by('dia')
         return queryset
-
 # '''
 
 
@@ -145,6 +133,10 @@ class ConsultaList(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+# '''
+# não deve ser possível desmarcar uma consulta que não foi marcada pelo usuário logado - ok
+# não deve ser possível desmarcar uma consulta que nunca foi marcada (identificador inexistente) - ok
+# não deve ser possível desmarcar uma consulta que já aconteceu - ok
 class ConsultaDetail(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -169,9 +161,6 @@ class ConsultaDetail(APIView):
 
     def delete(self, request, pk, format=None):
         consulta = self.get_object(pk)
-        # não deve ser possível desmarcar uma consulta que não foi marcada pelo usuário logado
-        # não deve ser possível desmarcar uma consulta que nunca foi marcada (identificador inexistente) - ok
-        # não deve ser possível desmarcar uma consulta que já aconteceu - ok
         if consulta.cliente == request.user and consulta.valid_data_hora():
             consulta.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
