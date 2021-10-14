@@ -17,10 +17,7 @@ class RegistroSerializer(serializers.ModelSerializer):
         }
 
     def save(self):
-
-        user = User(
-                    username=self.validated_data['username']
-                )
+        user = User(username=self.validated_data['username'])
         password = self.validated_data['password']
         confirm_password = self.validated_data['confirm_password']
         if password != confirm_password:
