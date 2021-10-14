@@ -1,7 +1,8 @@
 import datetime
 from django.http import Http404
+from django_filters import FilterSet, DateFilter, ModelMultipleChoiceFilter
 from django_filters.rest_framework import DjangoFilterBackend
-from .models import Especialidade, Medico, Agenda, Consulta
+from .models import Especialidade, Medico, Agenda, Consulta, AgendaHorario
 from .serializers import EspecialidadeSerializer, MedicoSerializer
 from .serializers import AgendaSerializer, ConsultaSerializer, RegistrarConsultaSerializer
 from .serializers import RegistroSerializer
@@ -34,15 +35,25 @@ class EspecialidadeList(generics.ListAPIView):
     search_fields = ['nome']
 
 
-# Pendente solução
+class MedicoFilter(FilterSet):
+    especialidade = ModelMultipleChoiceFilter(
+        field_name='especialidade',
+        to_field_name='id',
+        queryset=Especialidade.objects.all(),
+    )
+
+    class Meta:
+        model = Medico
+        fields = ['especialidade']
+
+
 class MedicoList(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     queryset = Medico.objects.all()
     serializer_class = MedicoSerializer
+    filter_class = MedicoFilter
     filter_backends = [filters.SearchFilter, DjangoFilterBackend]
     search_fields = ['nome']
-    # Retornar lista de especialidades
-    filter_fields = ['especialidade__nome']
 
 
 # '''
@@ -53,31 +64,52 @@ class MedicoList(generics.ListAPIView):
 # Agendas para datas passadas ou que todos os seus horários já foram preenchidos devem ser excluídas da listagem - ok
 # Horários dentro de uma agenda que já passaram ou que foram preenchidos devem ser excluídos da listagem - ok
 # Pendente solução
-# class AgendaList(generics.ListAPIView):
-class AgendaList(APIView):
+
+class AgendaFilter(FilterSet):
+    data_inicio = DateFilter(field_name="dia", lookup_expr='gte')
+    data_final = DateFilter(field_name="dia", lookup_expr='lte')
+    medico = ModelMultipleChoiceFilter(
+        field_name='medico',
+        to_field_name='id',
+        queryset=Medico.objects.all(),
+    )
+    especialidade = ModelMultipleChoiceFilter(
+        field_name='medico__especialidade',
+        to_field_name='id',
+        queryset=Especialidade.objects.all(),
+    )
+
+    class Meta:
+        model = Agenda
+        fields = ['medico', 'especialidade', 'data_inicio', 'data_final']
+
+
+class AgendaList(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
-    # serializer_class = AgendaSerializer
+    queryset = Agenda.objects.all()
+    serializer_class = AgendaSerializer
+    filterset_class = AgendaFilter
 
-    # def get_queryset(self):
-    #     queryset = Agenda.objects.filter(dia__gte=datetime.date.today()).order_by('dia')
-    #     return queryset
+    def get_horarios_consulta_agendada(self, agenda_id):
+        return Consulta.objects.filter(agenda=agenda_id).values_list('horario')
 
-    def get(self, request, format=None):
-        agendas = Agenda.objects.filter(dia__gte=datetime.date.today()).order_by('dia')
-        agendas = [agenda for agenda in agendas if agenda.get_horarios_disponiveis()]
-        if request.GET:
-            if 'medico' in request.GET:
-                medicos = request.GET.getlist('medico')
-                agendas = agendas.filter(medico_id__in=medicos)
-            if 'especialidade' in request.GET:
-                especialidades = request.GET.getlist('especialidade')
-                agendas = agendas.filter(medico__especialidade__in=especialidades)
-            if 'data_inicio' in request.GET and 'data_final' in request.GET:
-                data_inicio = request.GET.get('data_inicio')
-                data_final = request.GET.get('data_final')
-                agendas = agendas.filter(dia__gte=data_inicio, dia__lte=data_final)
-        serializer = AgendaSerializer(agendas, many=True)
-        return Response(serializer.data)
+    def get_horarios_agenda(self, agenda_id):
+        return (
+            AgendaHorario.objects
+            .filter(agenda=agenda_id)
+            .filter(agenda__dia__gte=datetime.date.today())
+            .filter(horario__gte=datetime.datetime.now().time())
+            .exclude(horario__in=self.get_horarios_consulta_agendada(agenda_id))
+            .values_list('horario', flat=True))
+
+    def get_queryset(self):
+        queryset = self.queryset
+        queryset = queryset.filter(dia__gte=datetime.date.today()).order_by('dia')
+        agendas = queryset.values_list('id', flat=True)
+        agendas_id = [agenda for agenda in agendas if self.get_horarios_agenda(agenda)]
+        queryset = queryset.filter(id__in=agendas_id).order_by('dia')
+        return queryset
+
 # '''
 
 

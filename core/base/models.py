@@ -60,7 +60,7 @@ class Agenda(models.Model):
         return horarios
 
     def valid_data(self):
-        return datetime.date.today() < self.dia
+        return self.dia < datetime.date.today()
 
     def clean(self):
         if self.valid_data():
