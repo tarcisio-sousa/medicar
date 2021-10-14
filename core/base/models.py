@@ -7,6 +7,7 @@ from django.utils.translation import gettext_lazy as _
 from django.conf import settings
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.db.models import Q
 from rest_framework.authtoken.models import Token
 
 
@@ -52,8 +53,10 @@ class Agenda(models.Model):
         horarios = (
             AgendaHorario.objects
             .filter(agenda=self.id)
-            .filter(agenda__dia__gte=datetime.date.today())
-            .filter(horario__gte=datetime.datetime.now().time())
+            .filter(
+                Q(agenda__dia__gte=datetime.date.today()) | 
+                Q(agenda__dia=datetime.date.today(), horario__gte=datetime.datetime.now().time())
+            )
             .exclude(horario__in=Consulta.objects.filter(agenda=self.id).values_list('horario'))
             .values_list('horario', flat=True))
         horarios = [horario.strftime("%H:%M") for horario in horarios]
