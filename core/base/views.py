@@ -98,7 +98,7 @@ class AgendaList(generics.ListAPIView):
             AgendaHorario.objects
             .filter(agenda=agenda_id)
             .filter(
-                Q(agenda__dia__gte=datetime.date.today()) | 
+                Q(agenda__dia__gte=datetime.date.today()) |
                 Q(agenda__dia=datetime.date.today(), horario__gte=datetime.datetime.now().time())
             )
             .exclude(horario__in=self.get_horarios_consulta_agendada(agenda_id))
