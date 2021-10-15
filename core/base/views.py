@@ -1,6 +1,6 @@
 import datetime
 from django.db.models import Q
-from django.http import Http404
+# from django.http import Http404
 from django_filters import FilterSet, DateFilter, ModelMultipleChoiceFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from .models import Especialidade, Medico, Agenda, Consulta, AgendaHorario
@@ -115,9 +115,9 @@ class ConsultaList(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, format=None):
-        data_hoje = datetime.date.today()
-        hora_agora = datetime.datetime.now().time()
-        consultas = Consulta.objects.filter(agenda__dia__gte=data_hoje, horario__gte=hora_agora)
+        consultas = Consulta.objects.filter(
+            agenda__dia__gte=datetime.date.today(),
+            horario__gte=datetime.datetime.now().time())
         consultas = consultas.order_by('-agenda__dia', 'horario')
         serializer = ConsultaSerializer(consultas, many=True)
         return Response(serializer.data)
@@ -137,33 +137,24 @@ class ConsultaList(APIView):
 # não deve ser possível desmarcar uma consulta que não foi marcada pelo usuário logado - ok
 # não deve ser possível desmarcar uma consulta que nunca foi marcada (identificador inexistente) - ok
 # não deve ser possível desmarcar uma consulta que já aconteceu - ok
-class ConsultaDetail(APIView):
+class ConsultaDetail(generics.RetrieveDestroyAPIView):
     permission_classes = [IsAuthenticated]
+    queryset = Consulta.objects.all()
+    serializer_class = ConsultaSerializer
+    lookup_field = 'pk'
 
-    def get_object(self, pk):
-        try:
-            return Consulta.objects.get(pk=pk)
-        except Consulta.DoesNotExist:
-            raise Http404
-
-    def get(self, request, pk, format=None):
-        consulta = self.get_object(pk)
-        serializer = ConsultaSerializer(consulta)
-        return Response(serializer.data)
-
-    def put(self, request, pk, format=None):
-        consulta = self.get_object(pk)
-        serializer = ConsultaSerializer(consulta, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
+    def retrieve(self, request, *args, **kwargs):
+        consulta = self.get_object()
+        if consulta.valid_data_hora():
+            serializer = self.get_serializer(consulta)
             return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response('Consulta não encontrada', status=status.HTTP_400_BAD_REQUEST)
 
-    def delete(self, request, pk, format=None):
-        consulta = self.get_object(pk)
-        if consulta.cliente == request.user and consulta.valid_data_hora():
-            consulta.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        serializer = ConsultaSerializer(consulta)
-        return Response(serializer.data)
+    def destroy(self, request, *args, **kwargs):
+        consulta = self.get_object()
+        if consulta.cliente == self.request.user and consulta.valid_data_hora():
+            self.perform_destroy(consulta)
+        else:
+            return Response('Não foi possível remover a consulta', status=status.HTTP_400_BAD_REQUEST)
 # '''
