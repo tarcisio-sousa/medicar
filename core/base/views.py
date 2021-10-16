@@ -1,16 +1,14 @@
 import datetime
 from django.db.models import Q
-# from django.http import Http404
 from django_filters import FilterSet, DateFilter, ModelMultipleChoiceFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from .models import Especialidade, Medico, Agenda, Consulta, AgendaHorario
 from .serializers import EspecialidadeSerializer, MedicoSerializer
-from .serializers import AgendaSerializer, ConsultaSerializer, RegistrarConsultaSerializer
+from .serializers import AgendaSerializer, ConsultaSerializer
 from .serializers import RegistroSerializer
 from rest_framework import filters, generics, status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.views import APIView
 
 
 class RegistrarList(generics.CreateAPIView):
@@ -106,31 +104,31 @@ class AgendaList(generics.ListAPIView):
 # '''
 # A data em que o agendamento foi feito deve ser salva ao se marcar uma consulta - ok
 # Não deve ser possível marcar uma consulta para um dia e horário passados - ok
-# Não deve ser possível marcar uma consulta se o usuário já possui uma consulta marcada no mesmo dia e horário
+# Não deve ser possível marcar uma consulta se o usuário já possui uma consulta marcada no mesmo dia e horário - ok
 # Não deve ser possível marcar uma consulta se o dia e horário já foram preenchidos - ok
 
 # A listagem não deve exibir consultas para dia e horário passados - ok
 # Os itens da listagem devem vir ordenados por ordem crescente do dia e horário da consulta - ok
-class ConsultaList(APIView):
+class ConsultaList(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
+    queryset = Consulta.objects.all()
+    serializer_class = ConsultaSerializer
 
-    def get(self, request, format=None):
-        consultas = Consulta.objects.filter(
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        queryset = queryset.filter(
             agenda__dia__gte=datetime.date.today(),
             horario__gte=datetime.datetime.now().time())
-        consultas = consultas.order_by('-agenda__dia', 'horario')
-        serializer = ConsultaSerializer(consultas, many=True)
+        serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
-    def post(self, request, format=None):
-        request.data['cliente'] = request.user.id
-        serializer = RegistrarConsultaSerializer(data=request.data)
-        if serializer.is_valid():
-            consulta = serializer.save()
-            consulta = Consulta.objects.get(id=consulta.id)
-            serializer = ConsultaSerializer(consulta)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def create(self, request, *args, **kwargs):
+        request.data.update({'cliente': request.user.id})
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 
 # '''
