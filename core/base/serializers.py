@@ -56,26 +56,26 @@ class AgendaSerializer(serializers.ModelSerializer):
 
 
 class ConsultaSerializer(serializers.ModelSerializer):
-    agenda = AgendaSerializer()
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['id'].read_only = True
+        self.fields['data_agendamento'].read_only = True
+        self.fields['agenda'].write_only = True
+        self.fields['cliente'].write_only = True
 
     class Meta:
         model = Consulta
-        fields = ['id', 'agenda', 'horario', 'data_agendamento', ]
-        depth = 2
+        fields = ['id', 'agenda', 'horario', 'data_agendamento', 'cliente']
 
     def to_representation(self, consulta):
         ret = super().to_representation(consulta)
-        agenda = ret.pop('agenda')
+        agenda = AgendaSerializer().to_representation(consulta.agenda)
+
         ret['horario'] = consulta.horario.strftime("%H:%M")
         ret['dia'] = agenda['dia']
         ret['medico'] = agenda['medico']
         return ret
-
-
-class RegistrarConsultaSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Consulta
-        fields = ['agenda', 'horario', 'cliente']
 
     def get_data_hora(self, consulta):
         return datetime.datetime.combine(consulta['agenda'].dia, consulta['horario'])
