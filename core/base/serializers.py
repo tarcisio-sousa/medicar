@@ -1,9 +1,10 @@
 import datetime
 
 from django.contrib.auth.models import User
-from rest_framework import serializers
-from .models import Especialidade, Medico, Agenda, Consulta, AgendaHorario
 from django.utils.translation import gettext_lazy as _
+from rest_framework import serializers
+from rest_framework.validators import UniqueTogetherValidator
+from .models import Especialidade, Medico, Agenda, Consulta, AgendaHorario
 
 
 class RegistroSerializer(serializers.ModelSerializer):
@@ -67,6 +68,13 @@ class ConsultaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Consulta
         fields = ['id', 'agenda', 'horario', 'data_agendamento', 'cliente']
+        validators = [
+            UniqueTogetherValidator(
+                queryset=Consulta.objects.all(),
+                fields=['agenda', 'horario'],
+                message=_("Já existe uma consulta cadastrada para essa agenda e horário.")
+            )
+        ]
 
     def to_representation(self, consulta):
         ret = super().to_representation(consulta)
