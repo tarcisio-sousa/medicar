@@ -49,7 +49,7 @@ class Agenda(models.Model):
     def __str__(self):
         return f'{self.dia.strftime("%d/%m/%Y")} {self.medico}'
 
-    def get_horarios_disponiveis(self):
+    def get_horarios(self):
         horarios = (
             self.horarios
             .filter(agenda=self.id)

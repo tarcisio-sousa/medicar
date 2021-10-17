@@ -52,7 +52,7 @@ class AgendaSerializer(serializers.ModelSerializer):
 
     def to_representation(self, agenda):
         ret = super().to_representation(agenda)
-        ret['horarios'] = agenda.get_horarios_disponiveis()
+        ret['horarios'] = agenda.get_horarios()
         return ret
 
 
@@ -88,6 +88,11 @@ class ConsultaSerializer(serializers.ModelSerializer):
     def get_data_hora(self, consulta):
         return datetime.datetime.combine(consulta['agenda'].dia, consulta['horario'])
 
+    def valid_cliente_in_consulta(self, consulta):
+        return (
+            Consulta.objects
+            .filter(cliente=consulta['cliente'], agenda__dia=consulta['agenda'].dia, horario=consulta['horario']))
+
     def valid_data_hora(self, consulta):
         return datetime.datetime.now() < self.get_data_hora(consulta)
 
@@ -98,7 +103,9 @@ class ConsultaSerializer(serializers.ModelSerializer):
             .values_list('horario'))
 
     def validate(self, consulta):
-        if not self.valid_horario_in_agenda(consulta):
+        if self.valid_cliente_in_consulta(consulta):
+            raise serializers.ValidationError(_('Cliente possui uma consulta agendada para essa data e horário'))
+        elif not self.valid_horario_in_agenda(consulta):
             raise serializers.ValidationError(_('Horário não está disponível'))
         elif not self.valid_data_hora(consulta):
             raise serializers.ValidationError(_('Não é possível realizar consulta para data e hora retroativa'))
