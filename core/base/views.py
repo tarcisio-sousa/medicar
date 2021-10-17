@@ -1,8 +1,7 @@
 import datetime
-from django.db.models import Q
 from django_filters import FilterSet, DateFilter, ModelMultipleChoiceFilter
 from django_filters.rest_framework import DjangoFilterBackend
-from .models import Especialidade, Medico, Agenda, Consulta, AgendaHorario
+from .models import Especialidade, Medico, Agenda, Consulta
 from .serializers import EspecialidadeSerializer, MedicoSerializer
 from .serializers import AgendaSerializer, ConsultaSerializer
 from .serializers import RegistroSerializer
@@ -77,25 +76,10 @@ class AgendaList(generics.ListAPIView):
     serializer_class = AgendaSerializer
     filterset_class = AgendaFilter
 
-    def get_horarios_consulta_agendada(self, agenda_id):
-        return Consulta.objects.filter(agenda=agenda_id).values_list('horario')
-
-    def get_horarios_agenda(self, agenda_id):
-        return (
-            AgendaHorario.objects
-            .filter(agenda=agenda_id)
-            .filter(
-                Q(agenda__dia__gte=datetime.date.today()) |
-                Q(agenda__dia=datetime.date.today(), horario__gte=datetime.datetime.now().time())
-            )
-            .exclude(horario__in=self.get_horarios_consulta_agendada(agenda_id))
-            .values_list('horario', flat=True))
-
     def get_queryset(self):
         queryset = self.queryset
         queryset = queryset.filter(dia__gte=datetime.date.today()).order_by('dia')
-        agendas = queryset.values_list('id', flat=True)
-        agendas_id = [agenda for agenda in agendas if self.get_horarios_agenda(agenda)]
+        agendas_id = [agenda.id for agenda in queryset if any(agenda.get_horarios_disponiveis())]
         queryset = queryset.filter(id__in=agendas_id).order_by('dia')
         return queryset
 # '''

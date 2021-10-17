@@ -51,10 +51,10 @@ class Agenda(models.Model):
 
     def get_horarios_disponiveis(self):
         horarios = (
-            AgendaHorario.objects
+            self.horarios
             .filter(agenda=self.id)
             .filter(
-                Q(agenda__dia__gte=datetime.date.today()) |
+                Q(agenda__dia__gt=datetime.date.today()) |
                 Q(agenda__dia=datetime.date.today(), horario__gte=datetime.datetime.now().time())
             )
             .exclude(horario__in=Consulta.objects.filter(agenda=self.id).values_list('horario'))
