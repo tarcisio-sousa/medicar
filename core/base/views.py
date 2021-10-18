@@ -5,18 +5,20 @@ from .filters import MedicoFilter, AgendaFilter
 from .serializers import EspecialidadeSerializer, MedicoSerializer
 from .serializers import AgendaSerializer, ConsultaSerializer
 from .serializers import RegistroSerializer
-from rest_framework import generics, status
+from rest_framework import status, viewsets
 from rest_framework.filters import SearchFilter
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from django.contrib.auth.models import User
 
 
-class RegistrarList(generics.CreateAPIView):
+class RegistrarViewSet(viewsets.ModelViewSet):
     permission_classes = [AllowAny]
+    queryset = User.objects.all()
     serializer_class = RegistroSerializer
 
 
-class EspecialidadeList(generics.ListAPIView):
+class EspecialidadeViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     queryset = Especialidade.objects.all()
     serializer_class = EspecialidadeSerializer
@@ -24,7 +26,7 @@ class EspecialidadeList(generics.ListAPIView):
     search_fields = ['nome']
 
 
-class MedicoList(generics.ListAPIView):
+class MedicoViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     queryset = Medico.objects.all()
     serializer_class = MedicoSerializer
@@ -33,7 +35,7 @@ class MedicoList(generics.ListAPIView):
     search_fields = ['nome']
 
 
-class AgendaList(generics.ListAPIView):
+class AgendaViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     queryset = Agenda.objects.all()
     serializer_class = AgendaSerializer
@@ -47,10 +49,11 @@ class AgendaList(generics.ListAPIView):
         return queryset
 
 
-class ConsultaList(generics.ListCreateAPIView):
+class ConsultaViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     queryset = Consulta.objects.all()
     serializer_class = ConsultaSerializer
+    lookup_field = 'pk'
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
@@ -67,13 +70,6 @@ class ConsultaList(generics.ListCreateAPIView):
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
-
-
-class ConsultaDetail(generics.RetrieveDestroyAPIView):
-    permission_classes = [IsAuthenticated]
-    queryset = Consulta.objects.all()
-    serializer_class = ConsultaSerializer
-    lookup_field = 'pk'
 
     def retrieve(self, request, *args, **kwargs):
         consulta = self.get_object()
